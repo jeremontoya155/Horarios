@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Turnos por Sucursal</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .turno-cell {
+            position: relative;
+            height: 70px;
+        }
+        .color-picker {
+            width: 20px;
+            height: 20px;
+            position: absolute;
+            top: 5px;
+            left: 5px;
+        }
+        .empleado-select {
+            margin-top: 5px;
+        }
+        .add-employee-btn {
+            margin-top: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .add-employee-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h2>Gestión de Turnos por Sucursal</h2>
+
+    <% sucursales.forEach(sucursal => { %>
+        <h3><%= sucursal.nombre %></h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Hora/Turno</th>
+                    <% ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].forEach(dia => { %>
+                        <th><%= dia %></th>
+                    <% }); %>
+                </tr>
+            </thead>
+            <tbody>
+                <% sucursal.turnos.split('/').forEach((turno, turnoIndex) => { %>
+                    <tr>
+                        <td><%= turno %></td>
+                        <% ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].forEach((dia, diaIndex) => { %>
+                            <td class="turno-cell">
+                                <input type="color" name="color_<%= sucursal.id %>_<%= diaIndex %>_<%= turnoIndex %>" class="color-picker" value="#ffffff">
+                                <div class="empleado-select">
+                                    <p><strong>Recomendado:</strong> <%= sucursal.empleados_necesarios[turnoIndex] %> empleados</p>
+                                    <% for (let i = 0; i < sucursal.empleados_necesarios[turnoIndex]; i++) { %>
+                                        <select name="empleado_<%= sucursal.id %>_<%= diaIndex %>_<%= turnoIndex %>_<%= i %>">
+                                            <option value="">Seleccionar empleado</option>
+                                            <% empleados.forEach(emp => { %>
+                                                <option value="<%= emp.id %>"><%= emp.nombre %></option>
+                                            <% }); %>
+                                        </select>
+                                    <% } %>
+                                    <button type="button" class="add-employee-btn" onclick="addEmployee(this)">+</button>
+                                </div>
+                            </td>
+                        <% }); %>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+        <form action="/index/empleados/<%= sucursal.id %>" method="POST">
+            <button type="submit">Guardar Empleados</button>
+        </form>
+    <% }); %>
+
+    <form action="/index/exportar" method="POST">
+        <button type="submit">Exportar a TXT</button>
+    </form>
+
+    <script>
+        function addEmployee(button) {
+            const cell = button.closest('.turno-cell');
+            const select = cell.querySelector('select').cloneNode(true);
+            select.value = "";
+            cell.querySelector('.empleado-select').insertBefore(select, button);
+        }
+    </script>
+</body>
+</html>

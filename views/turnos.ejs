@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Turnos</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <h2>Gestión de Turnos por Sucursal</h2>
+    <form action="/turnos/update" method="POST">
+        <table>
+            <thead>
+                <tr>
+                    <th>Sucursal</th>
+                    <th>Horario</th>
+                    <th>Turno</th>
+                    <th>Empleados Necesarios</th>
+                    <th>PCs Disponibles</th>
+                    <th>Editar Turno</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% sucursales.forEach(sucursal => { %>
+                    <tr>
+                        <td><%= sucursal.nombre %></td>
+                        <td><%= sucursal.horario %></td>
+                        <td>
+                            <input type="text" name="turnos_<%= sucursal.id %>" value="<%= sucursal.turnos %>" />
+                        </td>
+                        <td><%= sucursal.empleados_necesarios %></td>
+                        <td><%= sucursal.cantidad_pc %></td>
+                        <td>
+                            <button type="submit" formaction="/turnos/update/<%= sucursal.id %>">Guardar</button>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </form>
+
+    <form action="/turnos/export" method="POST">
+        <button type="submit">Exportar Horarios</button>
+    </form>
+</body>
+</html>

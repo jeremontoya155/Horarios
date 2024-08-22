@@ -1,0 +1,21 @@
+
+Sucursal: Sucursal Centro
+Horario: 08:00 - 18:00
+
+Mañana: Empleado: Ana Gomez
+Mañana: Empleado: Juan Perez
+Tarde: Empleado: Ana Gomez
+Tarde: Empleado: Juan Perez
+
+Sucursal: Sucursal Norte
+Horario: 09:00 - 19:00
+
+Noche: Empleado: Maria Garcia
+Noche: Empleado: Carlos Lopez
+Tarde: Empleado: Maria Garcia
+Tarde: Empleado: Carlos Lopez
+
+Sucursal: Sucursal Sur
+Horario: 10:00 - 20:00
+
+Noche: Empleado: Luis Rodriguez

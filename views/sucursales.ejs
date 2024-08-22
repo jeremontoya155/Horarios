@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Sucursales</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <h2>Gestión de Sucursales</h2>
+    <form action="/sucursales/import" method="POST" enctype="multipart/form-data">
+        <label for="file">Importar Sucursales desde Excel:</label>
+        <input type="file" name="file" id="file" required>
+        <button type="submit">Importar</button>
+    </form>
+    <br>
+    <a href="/sucursales/export">Descargar Excel de Ejemplo</a>
+    <br><br>
+    <ul>
+        <% sucursales.forEach(sucursal => { %>
+            <div class="sucursal">
+                <h3><%= sucursal.nombre %></h3>
+                <p>Horario: <%= sucursal.horario %></p>
+                <p>Cantidad de Empleados: <%= sucursal.cantidad_empleados %></p>
+                <p>Cantidad de PCs: <%= sucursal.cantidad_pc %></p>
+                <p>Días Abiertos: <%= sucursal.dias_abiertos %></p>
+        
+                <!-- Formulario para editar los días abiertos -->
+                <form action="/sucursales/dias_abiertos/<%= sucursal.id %>" method="POST">
+                    <label for="dias_abiertos">Días abiertos:</label>
+                    <input type="text" name="dias_abiertos" value="<%= sucursal.dias_abiertos %>" placeholder="Lunes,Martes,Miércoles,Jueves,Viernes">
+                    <button type="submit">Guardar</button>
+                </form>
+            </div>
+        <% }); %>
+        
+    </ul>
+    <br>
+    <h2>Agregar Nueva Sucursal</h2>
+    <form action="/sucursales/add" method="POST">
+        <label for="nombre">Nombre:</label>
+        <input type="text" name="nombre" id="nombre" required>
+        <label for="horario">Horario:</label>
+        <input type="text" name="horario" id="horario" required>
+        <label for="cantidad_empleados">Cantidad de Empleados:</label>
+        <input type="number" name="cantidad_empleados" id="cantidad_empleados" required>
+        <label for="cantidad_pc">Cantidad de PCs:</label>
+        <input type="number" name="cantidad_pc" id="cantidad_pc" required>
+        <label for="turnos">Turnos:</label>
+        <input type="text" name="turnos" id="turnos" required>
+        <label for="historico_ventas">Histórico de Ventas (JSON):</label>
+        <textarea name="historico_ventas" id="historico_ventas" required></textarea>
+        <button type="submit">Agregar Sucursal</button>
+    </form>
+</body>
+</html>

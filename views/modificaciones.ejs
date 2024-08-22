@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprobación de Modificaciones</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <h2>Aprobación de Modificaciones</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID Sucursal</th>
+                <th>Estado</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% modificaciones.forEach(modificacion => { %>
+                <tr>
+                    <td><%= modificacion.sucursal_id %></td>
+                    <td><%= modificacion.estado %></td>
+                    <td>
+                        <form action="/modificaciones/aprobar/<%= modificacion.id %>" method="POST" style="display:inline;">
+                            <button type="submit">Aprobar</button>
+                        </form>
+                        <form action="/modificaciones/desaprobar/<%= modificacion.id %>" method="POST" style="display:inline;">
+                            <button type="submit">Desaprobar</button>
+                        </form>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+</body>
+</html>
+
+   

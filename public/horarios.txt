@@ -1,0 +1,12 @@
+Sucursal: Sucursal Centro
+Horario: 08:00 - 18:00
+Turnos: Mañana/Tarde
+
+Sucursal: Sucursal Norte
+Horario: 09:00 - 19:00
+Turnos: Tarde/Noche
+
+Sucursal: Sucursal Sur
+Horario: 10:00 - 20:00
+Turnos: Noche
+
