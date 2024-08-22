@@ -56,7 +56,7 @@
             <thead>
                 <tr>
                     <th>Hora/Turno</th>
-                    <% ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].forEach(dia => { %>
+                    <% sucursal.dias_abiertos.split(',').forEach(dia => { %>
                         <th><%= dia %></th>
                     <% }); %>
                 </tr>
@@ -65,13 +65,13 @@
                 <% sucursal.turnos.split('/').forEach((turno, turnoIndex) => { %>
                     <tr>
                         <td><%= turno %></td>
-                        <% ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].forEach((dia, diaIndex) => { %>
+                        <% sucursal.dias_abiertos.split(',').forEach(dia => { %>
                             <td class="turno-cell">
-                                <input type="color" name="color_<%= sucursal.id %>_<%= diaIndex %>_<%= turnoIndex %>" class="color-picker" value="#ffffff">
+                                <input type="color" name="color_<%= sucursal.id %>_<%= dia %>_<%= turnoIndex %>" class="color-picker" value="#ffffff">
                                 <div class="empleado-select">
                                     <p><strong>Recomendado:</strong> <%= sucursal.empleados_necesarios[turnoIndex] %> empleados</p>
                                     <% for (let i = 0; i < sucursal.empleados_necesarios[turnoIndex]; i++) { %>
-                                        <select name="empleado_<%= sucursal.id %>_<%= diaIndex %>_<%= turnoIndex %>_<%= i %>">
+                                        <select name="empleado_<%= sucursal.id %>_<%= dia %>_<%= turnoIndex %>_<%= i %>">
                                             <option value="">Seleccionar empleado</option>
                                             <% empleados.forEach(emp => { %>
                                                 <option value="<%= emp.id %>"><%= emp.nombre %></option>
@@ -90,6 +90,7 @@
             <button type="submit">Guardar Empleados</button>
         </form>
     <% }); %>
+    
 
     <form action="/index/exportar" method="POST">
         <button type="submit">Exportar a TXT</button>

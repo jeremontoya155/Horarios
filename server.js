@@ -346,6 +346,20 @@ app.post('/sucursales/update/:id', async (req, res) => {
     }
 });
 
+app.post('/sucursales/dias_abiertos/:id', async (req, res) => {
+    const sucursalId = req.params.id;
+    const { dias_abiertos } = req.body;
+
+    try {
+        await pool.query('UPDATE sucursales SET dias_abiertos = $1 WHERE id = $2', [dias_abiertos, sucursalId]);
+        res.redirect('/sucursales');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/sucursales?error=Server%20error');
+    }
+});
+
+
 // Ruta para agregar o actualizar sucursales desde un archivo Excel
 app.post('/sucursales/import', upload.single('file'), async (req, res) => {
     const workbook = new excel.Workbook();
