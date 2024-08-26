@@ -8,14 +8,25 @@
 </head>
 <body>
     <h2>Gestión de Sucursales</h2>
+
+    <!-- Formulario para importar todas las sucursales desde un archivo Excel -->
     <form action="/sucursales/import" method="POST" enctype="multipart/form-data">
         <label for="file">Importar Sucursales desde Excel:</label>
         <input type="file" name="file" id="file" required>
         <button type="submit">Importar</button>
     </form>
     <br>
+
+    <!-- Enlace para descargar un archivo de ejemplo de Excel -->
     <a href="/sucursales/export">Descargar Excel de Ejemplo</a>
     <br><br>
+
+    <!-- Formulario para eliminar todas las sucursales -->
+    <form action="/sucursales/delete-all" method="POST">
+        <button type="submit" onclick="return confirm('¿Estás seguro de eliminar todas las sucursales?')">Eliminar Todas las Sucursales</button>
+    </form>
+    <br><br>
+
     <ul>
         <% sucursales.forEach(sucursal => { %>
             <div class="sucursal">
@@ -24,33 +35,112 @@
                 <p>Cantidad de Empleados: <%= sucursal.cantidad_empleados %></p>
                 <p>Cantidad de PCs: <%= sucursal.cantidad_pc %></p>
                 <p>Días Abiertos: <%= sucursal.dias_abiertos %></p>
-        
-                <!-- Formulario para editar los días abiertos -->
-                <form action="/sucursales/dias_abiertos/<%= sucursal.id %>" method="POST">
-                    <label for="dias_abiertos">Días abiertos:</label>
-                    <input type="text" name="dias_abiertos" value="<%= sucursal.dias_abiertos %>" placeholder="Lunes,Martes,Miércoles,Jueves,Viernes">
-                    <button type="submit">Guardar</button>
+                
+                <!-- Formulario para editar la sucursal -->
+                <form action="/sucursales/update/<%= sucursal.id %>" method="POST">
+                    <label for="nombre_<%= sucursal.id %>">Nombre:</label>
+                    <input type="text" name="nombre" id="nombre_<%= sucursal.id %>" value="<%= sucursal.nombre %>" required>
+                    
+                    <label for="horario_<%= sucursal.id %>">Horario:</label>
+                    <input type="text" name="horario" id="horario_<%= sucursal.id %>" value="<%= sucursal.horario %>" required>
+                    
+                    <label for="cantidad_empleados_<%= sucursal.id %>">Cantidad de Empleados:</label>
+                    <input type="number" name="cantidad_empleados" id="cantidad_empleados_<%= sucursal.id %>" value="<%= sucursal.cantidad_empleados %>" required>
+                    
+                    <label for="cantidad_pc_<%= sucursal.id %>">Cantidad de PCs:</label>
+                    <input type="number" name="cantidad_pc" id="cantidad_pc_<%= sucursal.id %>" value="<%= sucursal.cantidad_pc %>" required>
+                    
+                    <label for="turnos_<%= sucursal.id %>">Turnos:</label>
+                    <input type="text" name="turnos" id="turnos_<%= sucursal.id %>" value="<%= sucursal.turnos %>" required>
+                    
+                    <label for="dias_abiertos_<%= sucursal.id %>">Días Abiertos:</label>
+                    <input type="text" name="dias_abiertos" id="dias_abiertos_<%= sucursal.id %>" value="<%= sucursal.dias_abiertos %>" placeholder="Lunes,Martes,Miércoles,Jueves,Viernes">
+                    
+                    <label for="historico_ventas_<%= sucursal.id %>">Histórico de Ventas (JSON):</label>
+                    <textarea name="historico_ventas" id="historico_ventas_<%= sucursal.id %>" required><%= JSON.stringify(sucursal.historico_ventas) %></textarea>
+                    
+                    <button type="submit">Guardar Cambios</button>
+                </form>
+
+                <!-- Formulario para importar datos específicos de la sucursal -->
+                <form action="/sucursales/importar/<%= sucursal.id %>" method="POST" enctype="multipart/form-data">
+                    <label for="file_<%= sucursal.id %>">Importar Datos para <%= sucursal.nombre %> desde Excel:</label>
+                    <input type="file" name="file" id="file_<%= sucursal.id %>" required>
+                    <button type="submit">Importar Datos</button>
+                </form>
+                <br>
+                <!-- Enlace para descargar un archivo de ejemplo para esta sucursal -->
+                <a href="/sucursales/exportar-ejemplo/<%= sucursal.id %>">Descargar Excel de Ejemplo para <%= sucursal.nombre %></a>
+                
+                <br><br>
+                
+                <!-- Formulario para eliminar la sucursal -->
+                <form action="/sucursales/delete/<%= sucursal.id %>" method="POST" style="display:inline;">
+                    <button type="submit" onclick="return confirm('¿Estás seguro de eliminar esta sucursal?')">Eliminar Sucursal</button>
                 </form>
             </div>
         <% }); %>
-        
     </ul>
+
     <br>
     <h2>Agregar Nueva Sucursal</h2>
+    
+    <!-- Formulario para agregar una nueva sucursal -->
     <form action="/sucursales/add" method="POST">
         <label for="nombre">Nombre:</label>
         <input type="text" name="nombre" id="nombre" required>
+        
         <label for="horario">Horario:</label>
         <input type="text" name="horario" id="horario" required>
+        
         <label for="cantidad_empleados">Cantidad de Empleados:</label>
         <input type="number" name="cantidad_empleados" id="cantidad_empleados" required>
+        
         <label for="cantidad_pc">Cantidad de PCs:</label>
         <input type="number" name="cantidad_pc" id="cantidad_pc" required>
+        
         <label for="turnos">Turnos:</label>
         <input type="text" name="turnos" id="turnos" required>
+        
+        <label for="dias_abiertos">Días Abiertos:</label>
+        <input type="text" name="dias_abiertos" id="dias_abiertos" placeholder="Lunes,Martes,Miércoles,Jueves,Viernes" required>
+        
         <label for="historico_ventas">Histórico de Ventas (JSON):</label>
         <textarea name="historico_ventas" id="historico_ventas" required></textarea>
+        
         <button type="submit">Agregar Sucursal</button>
     </form>
+
+    <br>
+    <h2>Importar Sucursales Individualmente</h2>
+    <% if (sucursalesIndividuales && sucursalesIndividuales.length > 0) { %>
+        <% sucursalesIndividuales.forEach(sucursal => { %>
+            <div class="sucursal">
+                <h4>Sucursal: <%= sucursal.nombre %></h4>
+                <p>Horario: <%= sucursal.horario %></p>
+                <p>Cantidad de Empleados: <%= sucursal.cantidad_empleados %></p>
+                <p>Cantidad de PCs: <%= sucursal.cantidad_pc %></p>
+                <p>Turnos: <%= sucursal.turnos %></p>
+                <p>Días Abiertos: <%= sucursal.dias_abiertos %></p>
+                <p>Histórico de Ventas: <%= JSON.stringify(sucursal.historico_ventas) %></p>
+    
+                <!-- Formulario para importar la sucursal individualmente -->
+                <form action="/sucursales/importar/individual" method="POST">
+                    <input type="hidden" name="nombre" value="<%= sucursal.nombre %>">
+                    <input type="hidden" name="horario" value="<%= sucursal.horario %>">
+                    <input type="hidden" name="cantidad_empleados" value="<%= sucursal.cantidad_empleados %>">
+                    <input type="hidden" name="cantidad_pc" value="<%= sucursal.cantidad_pc %>">
+                    <input type="hidden" name="turnos" value="<%= sucursal.turnos %>">
+                    <input type="hidden" name="dias_abiertos" value="<%= sucursal.dias_abiertos %>">
+                    <input type="hidden" name="historico_ventas" value='<%= JSON.stringify(sucursal.historico_ventas) %>'>
+                    <button type="submit">Importar Sucursal</button>
+                </form>
+            </div>
+            <hr>
+        <% }); %>
+    <% } else { %>
+        <p>No hay sucursales cargadas para importar individualmente.</p>
+    <% } %>
+    
 </body>
 </html>

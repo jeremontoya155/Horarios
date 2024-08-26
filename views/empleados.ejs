@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargar Empleados</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <h2>Cargar Empleados</h2>
+
+    <!-- Formulario para cargar empleados desde un archivo Excel -->
+    <form action="/empleados/import" method="POST" enctype="multipart/form-data">
+        <label for="file">Importar Empleados desde Excel:</label>
+        <input type="file" name="file" id="file" required>
+        <button type="submit">Importar Empleados</button>
+    </form>
+    <br>
+
+    <!-- Enlace para descargar un archivo de ejemplo de Excel -->
+    <a href="/empleados/export">Descargar Excel de Ejemplo</a>
+    <br><br>
+
+    <!-- Lista de empleados cargados (puedes mostrar la lista si es necesario) -->
+    <ul>
+        <% empleados.forEach(empleado => { %>
+            <li><strong><%= empleado.nombre %></strong> - Sucursal: <%= empleado.sucursal_nombre %></li>
+        <% }); %>
+    </ul>
+
+</body>
+</html>

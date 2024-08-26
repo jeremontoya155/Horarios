@@ -293,10 +293,11 @@ app.post('/index/empleados/:id', async (req, res) => {
 
 
 // Ruta para ver las sucursales (CRUD)
+// Ruta para ver las sucursales (CRUD)
 app.get('/sucursales', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM sucursales');
-        res.render('sucursales', { sucursales: result.rows });
+        res.render('sucursales', { sucursales: result.rows, sucursalesIndividuales: [] });
     } catch (err) {
         console.error(err);
         res.redirect('/sucursales?error=Server%20error');
@@ -322,13 +323,19 @@ app.post('/sucursales/add', async (req, res) => {
 app.post('/sucursales/delete/:id', async (req, res) => {
     const sucursalId = req.params.id;
     try {
+        // Primero eliminar o actualizar los empleados relacionados
+        await pool.query('DELETE FROM empleados WHERE sucursal_id = $1', [sucursalId]);
+
+        // Luego eliminar la sucursal
         await pool.query('DELETE FROM sucursales WHERE id = $1', [sucursalId]);
+
         res.redirect('/sucursales');
     } catch (err) {
         console.error(err);
         res.redirect('/sucursales?error=Server%20error');
     }
 });
+
 
 // Ruta para actualizar una sucursal (si fuera necesario para un CRUD más completo)
 app.post('/sucursales/update/:id', async (req, res) => {
@@ -360,6 +367,75 @@ app.post('/sucursales/dias_abiertos/:id', async (req, res) => {
 });
 
 
+
+// Ruta para importar empleados desde un archivo Excel
+// Ruta para importar empleados desde un archivo Excel
+app.post('/empleados/import', upload.single('file'), async (req, res) => {
+    const workbook = new excel.Workbook();
+    try {
+        await workbook.xlsx.readFile(req.file.path);
+        const worksheet = workbook.getWorksheet(1);
+
+        worksheet.eachRow(async (row, rowNumber) => {
+            if (rowNumber > 1) { // Omite la primera fila si es encabezado
+                const nombre = row.getCell(1).value;
+                const sucursal_id = row.getCell(2).value;
+                const turno = row.getCell(3).value;
+
+                await pool.query(
+                    'INSERT INTO empleados (nombre, sucursal_id, turno) VALUES ($1, $2, $3)',
+                    [nombre, sucursal_id, turno]
+                );
+            }
+        });
+        res.redirect('/empleados');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/empleados?error=Server%20error');
+    }
+});
+
+// Ruta para exportar un archivo de ejemplo para empleados
+app.get('/empleados/export', (req, res) => {
+    const workbook = new excel.Workbook();
+    const worksheet = workbook.addWorksheet('Empleados Ejemplo');
+
+    worksheet.columns = [
+        { header: 'Nombre', key: 'nombre', width: 30 },
+        { header: 'Sucursal ID', key: 'sucursal_id', width: 20 },
+        { header: 'Turno', key: 'turno', width: 20 }
+    ];
+
+    worksheet.addRow({
+        nombre: 'Juan Perez',
+        sucursal_id: 1, // ID de la sucursal a la que pertenece
+        turno: 'Mañana'
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=empleados_ejemplo.xlsx');
+
+    return workbook.xlsx.write(res).then(() => {
+        res.end();
+    });
+});
+// Ruta para mostrar la vista de carga de empleados
+app.get('/empleados', async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT e.nombre, e.sucursal_id, e.turno
+            FROM empleados e
+        `);
+        res.render('empleados', { empleados: result.rows });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/empleados?error=Server%20error');
+    }
+});
+
+
+// Ruta para agregar o actualizar sucursales desde un archivo Excel
+// Ruta para agregar o actualizar sucursales desde un archivo Excel
 // Ruta para agregar o actualizar sucursales desde un archivo Excel
 app.post('/sucursales/import', upload.single('file'), async (req, res) => {
     const workbook = new excel.Workbook();
@@ -367,16 +443,33 @@ app.post('/sucursales/import', upload.single('file'), async (req, res) => {
         await workbook.xlsx.readFile(req.file.path);
         const worksheet = workbook.getWorksheet(1);
         worksheet.eachRow(async (row, rowNumber) => {
-            if (rowNumber > 1) {
+            if (rowNumber > 1) { // Omite la primera fila si es encabezado
                 const nombre = row.getCell(1).value;
                 const horario = row.getCell(2).value;
                 const cantidad_empleados = row.getCell(3).value;
                 const cantidad_pc = row.getCell(4).value;
                 const turnos = row.getCell(5).value;
-                const historico_ventas = JSON.stringify(row.getCell(6).value);
+                let historico_ventas = row.getCell(6).value;
+
+                // Asegúrate de que el JSON esté bien formateado
+                try {
+                    historico_ventas = JSON.parse(historico_ventas); // Convierte la cadena JSON a un objeto
+                    historico_ventas = JSON.stringify(historico_ventas); // Vuelve a convertirlo a una cadena JSON sin escapes innecesarios
+                } catch (err) {
+                    console.error('Error al parsear JSON:', err);
+                    res.redirect('/sucursales?error=Formato%20JSON%20inválido');
+                    return;
+                }
 
                 await pool.query(
-                    'INSERT INTO sucursales (nombre, horario, cantidad_empleados, cantidad_pc, turnos, historico_ventas) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (nombre) DO UPDATE SET horario = EXCLUDED.horario, cantidad_empleados = EXCLUDED.cantidad_empleados, cantidad_pc = EXCLUDED.cantidad_pc, turnos = EXCLUDED.turnos, historico_ventas = EXCLUDED.historico_ventas',
+                    `INSERT INTO sucursales (nombre, horario, cantidad_empleados, cantidad_pc, turnos, historico_ventas)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    ON CONFLICT (nombre) DO UPDATE
+                    SET horario = EXCLUDED.horario,
+                        cantidad_empleados = EXCLUDED.cantidad_empleados,
+                        cantidad_pc = EXCLUDED.cantidad_pc,
+                        turnos = EXCLUDED.turnos,
+                        historico_ventas = EXCLUDED.historico_ventas`,
                     [nombre, horario, cantidad_empleados, cantidad_pc, turnos, historico_ventas]
                 );
             }
@@ -387,6 +480,7 @@ app.post('/sucursales/import', upload.single('file'), async (req, res) => {
         res.redirect('/sucursales?error=Server%20error');
     }
 });
+
 
 // Ruta para exportar un archivo Excel de ejemplo
 app.get('/sucursales/export', (req, res) => {
@@ -417,6 +511,144 @@ app.get('/sucursales/export', (req, res) => {
     return workbook.xlsx.write(res).then(() => {
         res.end();
     });
+});
+
+// Ruta para eliminar todas las sucursales
+app.post('/sucursales/delete-all', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM sucursales');
+        res.redirect('/sucursales');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/sucursales?error=Server%20error');
+    }
+});
+
+// Ruta para actualizar una sucursal (ya la tienes)
+// Ruta para eliminar una sucursal individualmente (ya la tienes)
+
+
+
+// Ruta para cargar el archivo y mostrar las sucursales individualmente para importar
+// Ruta para cargar el archivo y mostrar las sucursales individualmente para importar
+// Ruta para cargar el archivo y mostrar las sucursales individualmente para importar
+app.post('/sucursales/importar', upload.single('file'), async (req, res) => {
+    const workbook = new excel.Workbook();
+    let sucursalesIndividuales = [];
+
+    try {
+        await workbook.xlsx.readFile(req.file.path);
+        const worksheet = workbook.getWorksheet(1);
+
+        worksheet.eachRow((row, rowNumber) => {
+            if (rowNumber > 1) { // Omitir la primera fila si es encabezado
+                const sucursal = {
+                    nombre: row.getCell(1).value,
+                    horario: row.getCell(2).value,
+                    cantidad_empleados: row.getCell(3).value,
+                    cantidad_pc: row.getCell(4).value,
+                    turnos: row.getCell(5).value,
+                    dias_abiertos: row.getCell(6).value,
+                    historico_ventas: JSON.parse(row.getCell(7).value)
+                };
+                sucursalesIndividuales.push(sucursal);
+            }
+        });
+
+        res.render('sucursales', { sucursales: [], sucursalesIndividuales });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/sucursales?error=Server%20error');
+    }
+});
+
+app.post('/sucursales/importar/:id', upload.single('file'), async (req, res) => {
+    const sucursalId = req.params.id;
+    const workbook = new excel.Workbook();
+
+    try {
+        await workbook.xlsx.readFile(req.file.path);
+        const worksheet = workbook.getWorksheet(1);
+
+        worksheet.eachRow(async (row, rowNumber) => {
+            if (rowNumber > 1) { // Omite la primera fila si es de encabezado
+                const horario = row.getCell(1).value;
+                const cantidad_empleados = row.getCell(2).value;
+                const cantidad_pc = row.getCell(3).value;
+                const turnos = row.getCell(4).value;
+                const dias_abiertos = row.getCell(5).value;
+                const historico_ventas = JSON.stringify(row.getCell(6).value);
+
+                await pool.query(
+                    `UPDATE sucursales 
+                     SET horario = $1, cantidad_empleados = $2, cantidad_pc = $3, turnos = $4, dias_abiertos = $5, historico_ventas = $6 
+                     WHERE id = $7`,
+                    [horario, cantidad_empleados, cantidad_pc, turnos, dias_abiertos, historico_ventas, sucursalId]
+                );
+            }
+        });
+        res.redirect('/sucursales');
+    } catch (err) {
+        console.error(err);
+        res.redirect('/sucursales?error=Server%20error');
+    }
+});
+
+app.get('/sucursales/exportar-ejemplo/:id', async (req, res) => {
+    const sucursalId = req.params.id;
+
+    try {
+        // Opcionalmente, puedes recuperar los datos de la sucursal para llenar el archivo de ejemplo con datos específicos
+        const sucursal = await pool.query('SELECT * FROM sucursales WHERE id = $1', [sucursalId]);
+
+        const workbook = new excel.Workbook();
+        const worksheet = workbook.addWorksheet('Sucursal Ejemplo');
+
+        worksheet.columns = [
+            { header: 'Horario', key: 'horario', width: 20 },
+            { header: 'Cantidad de Empleados', key: 'cantidad_empleados', width: 20 },
+            { header: 'Cantidad de PCs', key: 'cantidad_pc', width: 20 },
+            { header: 'Turnos', key: 'turnos', width: 30 },
+            { header: 'Días Abiertos', key: 'dias_abiertos', width: 30 },
+            { header: 'Histórico de Ventas (JSON)', key: 'historico_ventas', width: 40 }
+        ];
+
+        worksheet.addRow({
+            horario: sucursal.rows[0].horario || '08:00 - 18:00',
+            cantidad_empleados: sucursal.rows[0].cantidad_empleados || 10,
+            cantidad_pc: sucursal.rows[0].cantidad_pc || 5,
+            turnos: sucursal.rows[0].turnos || 'Mañana/Tarde',
+            dias_abiertos: sucursal.rows[0].dias_abiertos || 'Lunes,Martes,Miércoles,Jueves,Viernes',
+            historico_ventas: JSON.stringify(sucursal.rows[0].historico_ventas) || '{"2024-06": {"ventas": 1000}, "2024-07": {"ventas": 1200}}'
+        });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=sucursal_${sucursalId}_ejemplo.xlsx`);
+
+        return workbook.xlsx.write(res).then(() => {
+            res.end();
+        });
+    } catch (err) {
+        console.error(err);
+        res.redirect('/sucursales?error=Server%20error');
+    }
+});
+
+
+// Ruta para importar una sucursal individualmente
+app.post('/sucursales/importar/individual', async (req, res) => {
+    const { nombre, horario, cantidad_empleados, cantidad_pc, turnos, dias_abiertos, historico_ventas } = req.body;
+
+    try {
+        await pool.query(
+            'INSERT INTO sucursales (nombre, horario, cantidad_empleados, cantidad_pc, turnos, dias_abiertos, historico_ventas) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [nombre, horario, cantidad_empleados, cantidad_pc, turnos, dias_abiertos, historico_ventas]
+        );
+        res.redirect('/sucursales'); // Puedes redirigir o mostrar un mensaje de éxito
+    } catch (err) {
+        console.error(err);
+        res.redirect('/sucursales?error=Server%20error');
+    }
 });
 
 // Iniciar el servidor
